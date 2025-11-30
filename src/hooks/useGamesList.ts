@@ -69,10 +69,11 @@ async function loadGame(gameId: bigint): Promise<GameData | null> {
   try {
     const { createPublicClient, http } = await import("viem");
     // const { baseSepolia } = await import("wagmi/chains"); // Base Sepolia - commented out
-    const { base } = await import("wagmi/chains");
+    // const { base } = await import("wagmi/chains"); // Base Mainnet - commented out
+    const { celo } = await import("wagmi/chains");
     
     const publicClient = createPublicClient({
-      chain: base,
+      chain: celo,
       transport: http(),
     });
 

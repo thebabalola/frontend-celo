@@ -37,10 +37,10 @@ async function checkTokenAllowance(
   if (isETH(tokenAddress)) return BigInt(0); // ETH doesn't need allowance
   
   const { createPublicClient, http } = await import("viem");
-  const { base } = await import("wagmi/chains");
+  const { celo } = await import("wagmi/chains");
   
   const publicClient = createPublicClient({
-    chain: base,
+    chain: celo,
     transport: http(),
   });
 
@@ -331,10 +331,10 @@ export function useBlOcXTacToe() {
       if (hash) {
         // Wait for approval transaction
         const { createPublicClient, http } = await import("viem");
-        const { base } = await import("wagmi/chains");
+        const { celo } = await import("wagmi/chains");
         
         const publicClient = createPublicClient({
-          chain: base,
+          chain: celo,
           transport: http(),
         });
         
@@ -428,10 +428,11 @@ export function useBlOcXTacToe() {
       // Use useReadContract to get game data
       const { createPublicClient, http } = await import("viem");
       // const { baseSepolia } = await import("wagmi/chains"); // Base Sepolia - commented out
-      const { base } = await import("wagmi/chains");
+      // const { base } = await import("wagmi/chains"); // Base Mainnet - commented out
+      const { celo } = await import("wagmi/chains");
       
       const publicClient = createPublicClient({
-        chain: base,
+        chain: celo,
         transport: http(),
       });
 
@@ -583,10 +584,11 @@ export function useBlOcXTacToe() {
       // Get challenge to know bet amount
       const { createPublicClient, http } = await import("viem");
       // const { baseSepolia } = await import("wagmi/chains"); // Base Sepolia - commented out
-      const { base } = await import("wagmi/chains");
+      // const { base } = await import("wagmi/chains"); // Base Mainnet - commented out
+      const { celo } = await import("wagmi/chains");
       
       const publicClient = createPublicClient({
-        chain: base,
+        chain: celo,
         transport: http(),
       });
 

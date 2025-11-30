@@ -39,10 +39,10 @@ export function Navbar() {
 
   useEffect(() => setMounted(true), []);
 
-  // Auto-switch to Base when wallet connects and is on wrong chain
+  // Auto-switch to Celo when wallet connects and is on wrong chain
   useEffect(() => {
     if (isConnected && chainId && chainId !== SUPPORTED_CHAIN_ID && !hasSwitchedChain && !isSwitchingChain) {
-      console.log(`Current chain: ${chainId}, switching to Base (${SUPPORTED_CHAIN_ID})...`);
+      console.log(`Current chain: ${chainId}, switching to Celo (${SUPPORTED_CHAIN_ID})...`);
       setHasSwitchedChain(true);
       
       try {

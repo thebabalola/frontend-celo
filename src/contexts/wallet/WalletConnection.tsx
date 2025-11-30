@@ -2,7 +2,8 @@
 
 import { useAccount, useDisconnect, useSwitchChain } from "wagmi";
 // import { baseSepolia } from "wagmi/chains"; // Base Sepolia - commented out
-import { base } from "wagmi/chains"; // Base Mainnet
+// import { base } from "wagmi/chains"; // Base Mainnet - commented out
+import { celo } from "wagmi/chains"; // Celo Mainnet
 import { Wallet, AlertTriangle, LogOut, ChevronDown, Loader2, Copy, ExternalLink } from "lucide-react";
 import { useState } from "react";
 
@@ -19,8 +20,9 @@ const WalletConnection = () => {
   const [showChainSelector, setShowChainSelector] = useState(false);
 
   // Check if user is on wrong chain
-  const isWrongChain = account.isConnected && account.chain?.id !== base.id; // Base Mainnet
+  const isWrongChain = account.isConnected && account.chain?.id !== celo.id; // Celo Mainnet
   // const isWrongChain = account.isConnected && account.chain?.id !== baseSepolia.id; // Base Sepolia - commented out
+  // const isWrongChain = account.isConnected && account.chain?.id !== base.id; // Base Mainnet - commented out
 
   const handleCopy = () => {
     if (account.address) {
@@ -30,8 +32,9 @@ const WalletConnection = () => {
 
   const handleSwitchChain = async () => {
     try {
-      await switchChain({ chainId: base.id }); // Base Mainnet
+      await switchChain({ chainId: celo.id }); // Celo Mainnet
       // await switchChain({ chainId: baseSepolia.id }); // Base Sepolia - commented out
+      // await switchChain({ chainId: base.id }); // Base Mainnet - commented out
       setShowChainSelector(false);
     } catch (error) {
       console.error("Failed to switch chain:", error);
@@ -42,16 +45,21 @@ const WalletConnection = () => {
             method: "wallet_addEthereumChain",
             params: [
               {
-                chainId: `0x${base.id.toString(16)}`, // Base Mainnet
+                chainId: `0x${celo.id.toString(16)}`, // Celo Mainnet
                 // chainId: `0x${baseSepolia.id.toString(16)}`, // Base Sepolia - commented out
-                chainName: base.name, // Base Mainnet
+                // chainId: `0x${base.id.toString(16)}`, // Base Mainnet - commented out
+                chainName: celo.name, // Celo Mainnet
                 // chainName: baseSepolia.name, // Base Sepolia - commented out
-                rpcUrls: [base.rpcUrls.default.http[0]], // Base Mainnet
+                // chainName: base.name, // Base Mainnet - commented out
+                rpcUrls: [celo.rpcUrls.default.http[0]], // Celo Mainnet
                 // rpcUrls: [baseSepolia.rpcUrls.default.http[0]], // Base Sepolia - commented out
-                blockExplorerUrls: [base.blockExplorers?.default.url], // Base Mainnet
+                // rpcUrls: [base.rpcUrls.default.http[0]], // Base Mainnet - commented out
+                blockExplorerUrls: [celo.blockExplorers?.default.url], // Celo Mainnet
                 // blockExplorerUrls: [baseSepolia.blockExplorers?.default.url], // Base Sepolia - commented out
-                nativeCurrency: base.nativeCurrency, // Base Mainnet
+                // blockExplorerUrls: [base.blockExplorers?.default.url], // Base Mainnet - commented out
+                nativeCurrency: celo.nativeCurrency, // Celo Mainnet
                 // nativeCurrency: baseSepolia.nativeCurrency, // Base Sepolia - commented out
+                // nativeCurrency: base.nativeCurrency, // Base Mainnet - commented out
               },
             ],
           });
@@ -99,7 +107,7 @@ const WalletConnection = () => {
                   onClick={() => setShowChainSelector(true)}
                   className="flex items-center gap-2 rounded bg-yellow-600 px-3 py-1 text-sm text-white hover:bg-yellow-700 w-full justify-center"
                 >
-                  Switch to {base.name}
+                  Switch to {celo.name}
                 </button>
               ) : (
                 <div className="flex flex-col gap-2">
@@ -114,7 +122,7 @@ const WalletConnection = () => {
                     {isSwitching ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : null}
-                    {base.name}
+                    {celo.name}
                   </button>
                   <button
                     onClick={() => setShowChainSelector(false)}

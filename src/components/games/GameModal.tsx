@@ -196,10 +196,10 @@ export function GameModal({ gameId, isOpen, onClose }: GameModalProps) {
     
     try {
       const { createPublicClient, http } = await import("viem");
-      const { base } = await import("wagmi/chains");
+      const { celo } = await import("wagmi/chains");
       
       const publicClient = createPublicClient({
-        chain: base,
+        chain: celo,
         transport: http(),
       });
 

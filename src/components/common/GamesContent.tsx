@@ -8,7 +8,8 @@ import { usePlayerChallenges, useChallengeData } from "@/hooks/useGameData";
 import { Plus, RefreshCw, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { createPublicClient, http, Address } from "viem";
 // import { baseSepolia } from "wagmi/chains"; // Base Sepolia - commented out
-import { base } from "wagmi/chains";
+// import { base } from "wagmi/chains"; // Base Mainnet - commented out
+import { celo } from "wagmi/chains";
 import blocxtactoeAbiArtifact from "@/abi/blocxtactoeabi.json";
 import { CONTRACT_ADDRESS } from "@/config/constants";
 
@@ -122,7 +123,7 @@ export function GamesContent({ onTabChange }: GamesContentProps) {
     setLoading(true);
     try {
       const publicClient = createPublicClient({
-        chain: base,
+        chain: celo,
         transport: http(),
       });
 
@@ -171,7 +172,7 @@ export function GamesContent({ onTabChange }: GamesContentProps) {
 
       try {
         const publicClient = createPublicClient({
-          chain: base,
+          chain: celo,
           transport: http(),
         });
 

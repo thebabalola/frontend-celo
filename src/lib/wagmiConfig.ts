@@ -1,7 +1,8 @@
 // src/lib/wagmiConfig.ts
 import { createConfig, http } from "wagmi";
 // import { baseSepolia } from "wagmi/chains"; // Base Sepolia - commented out
-import { base } from "wagmi/chains"; // Base Mainnet
+// import { base } from "wagmi/chains"; // Base Mainnet - commented out
+import { celo } from "wagmi/chains"; // Celo Mainnet
 import {
   injected,
   walletConnect,
@@ -19,7 +20,7 @@ const getWalletConnectConnector = () => {
       projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "",
       metadata: {
         name: "BlOcXTacToe",
-        description: "Decentralized Tic Tac Toe on Base Mainnet",
+        description: "Decentralized Tic Tac Toe on Celo Mainnet",
         url: "https://blocxtactoe.vercel.app",
         icons: ["https://blocxtactoe.vercel.app/bbt-logo.png"],
       },
@@ -30,15 +31,16 @@ const getWalletConnectConnector = () => {
 
 export const config = createConfig({
   // chains: [baseSepolia], // Base Sepolia - commented out
-  chains: [base], // Base Mainnet
+  // chains: [base], // Base Mainnet - commented out
+  chains: [celo], // Celo Mainnet
   transports: {
-    [base.id]: http("https://mainnet.base.org", {
+    [celo.id]: http("https://forno.celo.org", {
       batch: {
         multicall: true,
       },
       retryCount: 3,
       retryDelay: 1000,
-    }), // Base Mainnet RPC with retry logic
+    }), // Celo Mainnet RPC with retry logic
   },
   connectors: [
     // Farcaster Mini App connector as the primary option

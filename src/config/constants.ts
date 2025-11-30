@@ -6,18 +6,20 @@ import { Address } from "viem";
  */
 export const CONTRACT_ADDRESS: Address =
   (process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as Address) ||
-  ("0x52e3C6FF91c51493E08434E806bD54Bd5c7a2151" as Address);
+  ("0xA28FE229808a75503EB0831baa5c133fa37B623e" as Address);
 
 /**
  * Network Configuration
  */
-// Previously used testnet (kept for reference)
+// Previously used networks (kept for reference)
 // export const SUPPORTED_CHAIN_ID = 84532; // Base Sepolia
 // export const SUPPORTED_CHAIN_NAME = "baseSepolia";
+// export const SUPPORTED_CHAIN_ID = 8453; // Base
+// export const SUPPORTED_CHAIN_NAME = "base";
 
-// Now using Base mainnet
-export const SUPPORTED_CHAIN_ID = 8453; // Base
-export const SUPPORTED_CHAIN_NAME = "base";
+// Now using Celo mainnet
+export const SUPPORTED_CHAIN_ID = 42220; // Celo
+export const SUPPORTED_CHAIN_NAME = "celo";
 
 /**
  * Game Configuration

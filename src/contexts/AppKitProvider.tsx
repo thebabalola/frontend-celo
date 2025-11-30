@@ -18,7 +18,7 @@ if (!projectId) {
 // Set up metadata for BlOcXTacToe
 const metadata = {
   name: 'BlOcXTacToe',
-  description: 'Decentralized Tic Tac Toe on Base Mainnet',
+  description: 'Decentralized Tic Tac Toe on Celo Mainnet',
   url: 'https://blocxtactoe.vercel.app',
   icons: ['https://blocxtactoe.vercel.app/bbt-logo.png']
 }
@@ -28,9 +28,11 @@ const modal = createAppKit({
   adapters: [wagmiAdapter],
   projectId,
   // networks: [baseSepolia], // Base Sepolia - commented out
-  networks: [base], // Base Mainnet
+  // networks: [base], // Base Mainnet - commented out
+  networks: [celo], // Celo Mainnet
   // defaultNetwork: baseSepolia, // Base Sepolia - commented out
-  defaultNetwork: base, // Base Mainnet
+  // defaultNetwork: base, // Base Mainnet - commented out
+  defaultNetwork: celo, // Celo Mainnet
   metadata: metadata,
   features: {
     analytics: true // Optional - defaults to your Cloud configuration
