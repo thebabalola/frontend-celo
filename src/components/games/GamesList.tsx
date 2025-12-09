@@ -4,10 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Clock, Coins, Users, Play, Loader2, AlertTriangle, Grid3x3, Trophy } from "lucide-react";
 import { useAccount } from "wagmi";
-import { formatEther } from "viem";
 import { Address } from "viem";
 import { CountdownTimer } from "./CountdownTimer";
 import { usePlayerData } from "@/hooks/useGameData";
+import { BetAmountDisplay } from "@/components/common/TokenDisplay";
 
 export interface Game {
   id: string;
@@ -269,7 +269,7 @@ export function GamesList({ games, loading = false, onGameClick }: GamesListProp
                     <Coins className="w-4 h-4 text-gray-400" />
                     <span className="text-sm">
                       <span className="text-gray-400">Bet: </span>
-                      <span className="font-semibold text-white">{formatEther(game.betAmount)} ETH</span>
+                      <BetAmountDisplay betAmount={game.betAmount} tokenAddress={game.tokenAddress} />
                     </span>
                   </div>
 
