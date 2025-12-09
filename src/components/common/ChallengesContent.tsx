@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAccount } from "wagmi";
 import { useBlOcXTacToe } from "@/hooks/useBlOcXTacToe";
 import {
@@ -24,9 +24,10 @@ import { toast } from "react-hot-toast";
 import { waitForTransactionReceipt } from "viem/actions";
 import { usePublicClient, useReadContract } from "wagmi";
 import { useRouter } from "next/navigation";
-import { formatEther, Address } from "viem";
+import { formatEther, Address, isAddress } from "viem";
 import { PlayerSearch } from "./PlayerSearch";
 import { GameModal } from "@/components/games/GameModal";
+import { BetAmountDisplay, TokenNameDisplay, TokenOption, TokenBalanceDisplay } from "./TokenDisplay";
 import blocxtactoeAbiArtifact from "@/abi/blocxtactoeabi.json";
 import { CONTRACT_ADDRESS } from "@/config/constants";
 
@@ -60,6 +61,9 @@ export function ChallengesContent() {
   const { player: playerData } = usePlayerData(address);
   const { supportedTokens } = useBlOcXTacToe();
 
+  // Count incoming and outgoing challenges
+  const challengeCounts = useChallengeCounts(challengeIds, address);
+
   const handleChallengeClick = (gameId: bigint) => {
     setSelectedGameId(gameId);
     setIsGameModalOpen(true);
@@ -88,12 +92,17 @@ export function ChallengesContent() {
         selectedToken,
         boardSize
       );
-      if (typeof hash === "string" && publicClient) {
-        // Waiting for confirmation - toast removed per user request
-        await waitForTransactionReceipt(publicClient, {
-          hash: hash as `0x${string}`,
-        });
-        toast.success("Challenge created successfully!");
+      if (typeof hash === "string") {
+        if (publicClient) {
+          // Wait for confirmation
+          await waitForTransactionReceipt(publicClient, {
+            hash: hash as `0x${string}`,
+          });
+        }
+        
+        // Show success notification after confirmation
+        toast.success("Challenge created");
+        
         setShowCreateModal(false);
         setChallengedAddress("");
         setBetAmount("");
@@ -118,47 +127,49 @@ export function ChallengesContent() {
 
     try {
       const hash = await acceptChallenge(challengeId, moveIndex);
-      if (typeof hash === "string" && publicClient) {
-        // Waiting for confirmation - toast removed per user request
-        const receipt = await waitForTransactionReceipt(publicClient, {
-          hash: hash as `0x${string}`,
-        });
+      if (typeof hash === "string") {
+        // Show immediate success notification
+        toast.success("Challenge accepted! Starting game...");
+        
+        if (publicClient) {
+          // Wait for confirmation in the background
+          const receipt = await waitForTransactionReceipt(publicClient, {
+            hash: hash as `0x${string}`,
+          });
 
-        // Decode ChallengeAccepted event to get gameId
-        const blocxtactoeAbiArtifact = await import(
-          "@/abi/blocxtactoeabi.json"
-        );
-        const blocxtactoeAbi = (
-          blocxtactoeAbiArtifact as unknown as { abi: unknown[] }
-        ).abi;
-        const { decodeEventLog } = await import("viem");
+          // Decode ChallengeAccepted event to get gameId
+          const blocxtactoeAbiArtifact = await import(
+            "@/abi/blocxtactoeabi.json"
+          );
+          const blocxtactoeAbi = (
+            blocxtactoeAbiArtifact as unknown as { abi: unknown[] }
+          ).abi;
+          const { decodeEventLog } = await import("viem");
 
-        let gameId: bigint | null = null;
-        for (const log of receipt.logs) {
-          try {
-            const decoded = decodeEventLog({
-              abi: blocxtactoeAbi,
-              data: log.data,
-              topics: log.topics,
-            });
-            if (
-              decoded.eventName === "ChallengeAccepted" &&
-              decoded.args &&
-              "gameId" in decoded.args
-            ) {
-              gameId = decoded.args.gameId as bigint;
-              break;
+          let gameId: bigint | null = null;
+          for (const log of receipt.logs) {
+            try {
+              const decoded = decodeEventLog({
+                abi: blocxtactoeAbi,
+                data: log.data,
+                topics: log.topics,
+              });
+              if (
+                decoded.eventName === "ChallengeAccepted" &&
+                decoded.args &&
+                "gameId" in decoded.args
+              ) {
+                gameId = decoded.args.gameId as bigint;
+                break;
+              }
+            } catch {
+              // Not the event we're looking for
             }
-          } catch {
-            // Not the event we're looking for
           }
-        }
 
-        if (gameId !== null) {
-          toast.success("Challenge accepted! Starting game...");
-          router.push(`/play/${gameId.toString()}`);
-        } else {
-          toast.success("Challenge accepted!");
+          if (gameId !== null) {
+            router.push(`/play/${gameId.toString()}`);
+          }
         }
       }
     } catch (err: any) {
@@ -202,23 +213,41 @@ export function ChallengesContent() {
         <div className="flex gap-2 mb-4 sm:mb-6">
           <button
             onClick={() => setActiveTab("incoming")}
-            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium transition-all text-xs sm:text-sm ${
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium transition-all text-xs sm:text-sm flex items-center gap-2 ${
               activeTab === "incoming"
                 ? "bg-orange-500/20 text-orange-400 border border-orange-500/30"
                 : "bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10"
             }`}
           >
-            Incoming
+            <span>Incoming</span>
+            {challengeCounts.incoming > 0 && (
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                activeTab === "incoming"
+                  ? "bg-orange-500/30 text-orange-300"
+                  : "bg-white/10 text-gray-300"
+              }`}>
+                {challengeCounts.incoming}
+              </span>
+            )}
           </button>
           <button
             onClick={() => setActiveTab("outgoing")}
-            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium transition-all text-xs sm:text-sm ${
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium transition-all text-xs sm:text-sm flex items-center gap-2 ${
               activeTab === "outgoing"
                 ? "bg-orange-500/20 text-orange-400 border border-orange-500/30"
                 : "bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10"
             }`}
           >
-            Outgoing
+            <span>Outgoing</span>
+            {challengeCounts.outgoing > 0 && (
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                activeTab === "outgoing"
+                  ? "bg-orange-500/30 text-orange-300"
+                  : "bg-white/10 text-gray-300"
+              }`}>
+                {challengeCounts.outgoing}
+              </span>
+            )}
           </button>
         </div>
 
@@ -245,6 +274,7 @@ export function ChallengesContent() {
                       onGameClick={handleChallengeClick}
                       isPending={isPending || isConfirming}
                       showOnlyPending={true}
+                      filterTab={activeTab}
                     />
                   ))}
                   {/* Active challenges (accepted, game in progress) */}
@@ -257,6 +287,7 @@ export function ChallengesContent() {
                       onGameClick={handleChallengeClick}
                       isPending={isPending || isConfirming}
                       showOnlyActive={true}
+                      filterTab={activeTab}
                     />
                   ))}
                 </>
@@ -264,7 +295,11 @@ export function ChallengesContent() {
                 <div className="text-center py-8 sm:py-12 bg-white/5 rounded-lg border border-white/10">
                   <Sword className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-2 sm:mb-4" />
                   <p className="text-gray-400 text-sm sm:text-base">
-                    No challenges found
+                    {activeTab === "incoming" 
+                      ? "No incoming challenges" 
+                      : activeTab === "outgoing"
+                      ? "No outgoing challenges"
+                      : "No challenges found"}
                   </p>
                 </div>
               )}
@@ -298,6 +333,7 @@ export function ChallengesContent() {
                         onGameClick={handleChallengeClick}
                         isPending={isPending || isConfirming}
                         showOnlyFinished={true}
+                        filterTab={activeTab}
                       />
                     ))}
                   </div>
@@ -358,6 +394,7 @@ function ChallengeCard({
   showOnlyPending = false,
   showOnlyActive = false,
   showOnlyFinished = false,
+  filterTab,
 }: {
   challengeId: bigint;
   currentAddress: string | undefined;
@@ -367,6 +404,7 @@ function ChallengeCard({
   showOnlyPending?: boolean;
   showOnlyActive?: boolean;
   showOnlyFinished?: boolean;
+  filterTab?: "incoming" | "outgoing";
 }) {
   const { challenge, isLoading } = useChallengeData(challengeId);
   const [showAcceptModal, setShowAcceptModal] = useState(false);
@@ -436,6 +474,10 @@ function ChallengeCard({
   const canAccept = isChallenged && !challengeData.accepted;
   const isClickable = challengeData.accepted && challengeData.gameId && challengeData.gameId > BigInt(0);
 
+  // Filter by tab: incoming = challenges where user is challenged, outgoing = challenges where user is challenger
+  if (filterTab === "incoming" && !isChallenged) return null;
+  if (filterTab === "outgoing" && !isChallenger) return null;
+
   const handleCardClick = () => {
     if (isClickable) {
       onGameClick(challengeData.gameId);
@@ -445,7 +487,7 @@ function ChallengeCard({
   // Determine status display
   const getStatusDisplay = () => {
     if (!challengeData.accepted) return { text: "Pending", color: "text-yellow-400" };
-    if (isGameFinished) return { text: "Finished", color: "text-gray-400" };
+    if (isGameFinished) return { text: "Finished", color: "text-red-400" };
     return { text: "In Progress", color: "text-green-400" };
   };
   const statusDisplay = getStatusDisplay();
@@ -479,7 +521,7 @@ function ChallengeCard({
             <span>
               Bet:{" "}
               <span className="text-white">
-                {formatEther(challengeData.betAmount || BigInt(0))} ETH
+                <BetAmountDisplay betAmount={challengeData.betAmount || BigInt(0)} tokenAddress={challengeData.tokenAddress} />
               </span>
             </span>
             <span className="flex items-center gap-1">
@@ -520,7 +562,9 @@ function ChallengeCard({
               </button>
             )}
             {isClickable && !canAccept && (
-              <span className="text-xs text-gray-500 whitespace-nowrap">Click to play →</span>
+              <span className="text-xs text-gray-500 whitespace-nowrap">
+                {isGameFinished ? "Click to view →" : "Click to play →"}
+              </span>
             )}
           </div>
         </div>
@@ -530,6 +574,7 @@ function ChallengeCard({
         <AcceptChallengeModal
           challengeId={challengeId}
           betAmount={challengeData.betAmount}
+          tokenAddress={challengeData.tokenAddress}
           boardSize={challengeData.boardSize || 3}
           onClose={() => {
             setShowAcceptModal(false);
@@ -616,6 +661,19 @@ function CreateChallengeModal({
               placeholder="0x..."
               className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/20 text-sm sm:text-base"
             />
+            {challengedAddress && (
+              <>
+                {challengedAddress.toLowerCase().startsWith("0x") && challengedAddress.length < 42 && (
+                  <p className="text-gray-400 text-xs sm:text-sm mt-1">Please enter a complete address (42 characters)</p>
+                )}
+                {challengedAddress.toLowerCase().startsWith("0x") && challengedAddress.length >= 42 && !isAddress(challengedAddress as Address) && (
+                  <p className="text-gray-400 text-xs sm:text-sm mt-1">Invalid address format</p>
+                )}
+                {challengedAddress && isAddress(challengedAddress as Address) && challengedAddress.toLowerCase() === "0x0000000000000000000000000000000000000000" && (
+                  <p className="text-gray-400 text-xs sm:text-sm mt-1">Invalid address</p>
+                )}
+              </>
+            )}
           </div>
 
           <div>
@@ -634,7 +692,7 @@ function CreateChallengeModal({
                   "0x0000000000000000000000000000000000000000" ? (
                     "ETH (Native)"
                   ) : (
-                    <TokenLabel tokenAddress={selectedToken} />
+                    <TokenOption tokenAddress={selectedToken} isSelected={false} />
                   )}
                 </span>
                 <ChevronDown
@@ -662,7 +720,10 @@ function CreateChallengeModal({
                           : "text-white"
                       }`}
                     >
-                      ETH (Native)
+                      <TokenOption 
+                        tokenAddress={"0x0000000000000000000000000000000000000000" as Address}
+                        isSelected={selectedToken === "0x0000000000000000000000000000000000000000"}
+                      />
                     </button>
                     {supportedTokens
                       .filter(
@@ -683,7 +744,10 @@ function CreateChallengeModal({
                               : "text-white"
                           }`}
                         >
-                          <TokenLabel tokenAddress={token} />
+                          <TokenOption 
+                            tokenAddress={token}
+                            isSelected={selectedToken === token}
+                          />
                         </button>
                       ))}
                   </div>
@@ -711,6 +775,7 @@ function CreateChallengeModal({
                 required
               />
             </div>
+            <TokenBalanceDisplay tokenAddress={selectedToken} />
           </div>
 
           <div>
@@ -780,6 +845,7 @@ function CreateChallengeModal({
 function AcceptChallengeModal({
   challengeId,
   betAmount,
+  tokenAddress,
   boardSize,
   onClose,
   onAccept,
@@ -789,6 +855,7 @@ function AcceptChallengeModal({
 }: {
   challengeId: bigint;
   betAmount: bigint;
+  tokenAddress?: Address;
   boardSize: number;
   onClose: () => void;
   onAccept: (moveIndex: number) => void;
@@ -818,7 +885,7 @@ function AcceptChallengeModal({
           <p className="text-gray-300 text-sm sm:text-base">
             Bet Amount:{" "}
             <span className="text-white font-semibold">
-              {formatEther(betAmount)} ETH
+              <BetAmountDisplay betAmount={betAmount} tokenAddress={tokenAddress} />
             </span>
           </p>
           <p className="text-gray-300 text-sm sm:text-base flex items-center gap-1">
@@ -885,21 +952,77 @@ function AcceptChallengeModal({
   );
 }
 
-function TokenLabel({ tokenAddress }: { tokenAddress: Address }) {
-  const { data: tokenName } = useReadContract({
-    address: CONTRACT_ADDRESS,
-    abi: blocxtactoeAbi,
-    functionName: "getTokenName",
-    args: [tokenAddress],
-    query: { enabled: !!tokenAddress },
-  });
+// Hook to count incoming and outgoing challenges
+function useChallengeCounts(
+  challengeIds: bigint[] | undefined,
+  currentAddress: string | undefined
+) {
+  const publicClient = usePublicClient();
+  const [incoming, setIncoming] = useState(0);
+  const [outgoing, setOutgoing] = useState(0);
 
-  const displayName =
-    tokenAddress === "0x0000000000000000000000000000000000000000"
-      ? "ETH (Native)"
-      : tokenName && typeof tokenName === "string" && tokenName.length > 0
-      ? tokenName
-      : `${tokenAddress.slice(0, 6)}...${tokenAddress.slice(-4)}`;
+  useEffect(() => {
+    if (!challengeIds || !Array.isArray(challengeIds) || challengeIds.length === 0 || !currentAddress || !publicClient) {
+      setIncoming(0);
+      setOutgoing(0);
+      return;
+    }
 
-  return <>{displayName}</>;
+    let isCancelled = false;
+
+    const countChallenges = async () => {
+      let incomingCount = 0;
+      let outgoingCount = 0;
+
+      try {
+        const promises = challengeIds.map(async (challengeId) => {
+          try {
+            const challenge = await publicClient.readContract({
+              address: CONTRACT_ADDRESS,
+              abi: blocxtactoeAbi,
+              functionName: "getChallenge",
+              args: [challengeId],
+            });
+
+            if (challenge && Array.isArray(challenge) && challenge.length >= 3) {
+              const challenger = challenge[0] as Address;
+              const challenged = challenge[2] as Address;
+
+              const isChallenger = challenger?.toLowerCase() === currentAddress?.toLowerCase();
+              const isChallenged = challenged?.toLowerCase() === currentAddress?.toLowerCase();
+
+              return { isChallenger, isChallenged };
+            }
+          } catch (error) {
+            // Ignore errors for individual challenges
+          }
+          return null;
+        });
+
+        const results = await Promise.all(promises);
+
+        if (!isCancelled) {
+          results.forEach((result) => {
+            if (result) {
+              if (result.isChallenger) outgoingCount++;
+              if (result.isChallenged) incomingCount++;
+            }
+          });
+
+          setIncoming(incomingCount);
+          setOutgoing(outgoingCount);
+        }
+      } catch (error) {
+        // Ignore overall errors
+      }
+    };
+
+    countChallenges();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [challengeIds, currentAddress, publicClient]);
+
+  return { incoming, outgoing };
 }
