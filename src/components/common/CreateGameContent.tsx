@@ -13,6 +13,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Address } from "viem";
 import blocxtactoeAbiArtifact from "@/abi/blocxtactoeabi.json";
 import { CONTRACT_ADDRESS } from "@/config/constants";
+import { TokenOption } from "./TokenDisplay";
+import { useTokenBalance } from "@/hooks/useTokenBalance";
 
 export function CreateGameContent() {
   const [betAmount, setBetAmount] = useState("");
@@ -339,7 +341,10 @@ export function CreateGameContent() {
                           : "text-white"
                       }`}
                     >
-                      ETH (Native)
+                      <TokenOption 
+                        tokenAddress={"0x0000000000000000000000000000000000000000" as Address}
+                        isSelected={selectedToken === "0x0000000000000000000000000000000000000000"}
+                      />
                     </button>
                     {(supportedTokens as Address[])
                       .filter(
@@ -360,9 +365,9 @@ export function CreateGameContent() {
                               : "text-white"
                           }`}
                         >
-                          <TokenLabel
+                          <TokenOption 
                             tokenAddress={token}
-                            abi={blocxtactoeAbi}
+                            isSelected={selectedToken === token}
                           />
                         </button>
                       ))}
@@ -379,7 +384,7 @@ export function CreateGameContent() {
                 htmlFor="betAmount"
                 className="block text-xs sm:text-sm font-medium text-gray-300 mb-1.5 sm:mb-2"
               >
-                Bet Amount
+                Bet Amount <span className="text-[10px] sm:text-xs text-gray-400 font-normal">(Both players must pay this amount. Winner takes all.)</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none">
@@ -398,9 +403,7 @@ export function CreateGameContent() {
                   disabled={!isRegistered}
                 />
               </div>
-              <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-gray-400">
-                Both players must pay this amount. Winner takes all.
-              </p>
+              <TokenBalanceDisplay tokenAddress={selectedToken} />
             </div>
 
             <div>
@@ -562,4 +565,45 @@ function TokenLabel({
       : `${tokenAddress.slice(0, 6)}...${tokenAddress.slice(-4)}`;
 
   return <>{displayName}</>;
+}
+
+function TokenBalanceDisplay({ tokenAddress }: { tokenAddress: Address }) {
+  const { formatted: balance, isLoading } = useTokenBalance(tokenAddress);
+  
+  // Check if it's ETH (zero address)
+  const zeroAddress = "0x0000000000000000000000000000000000000000";
+  const normalizedAddress = tokenAddress.toLowerCase();
+  const isETH = normalizedAddress === zeroAddress;
+
+  // Get token name for display
+  const { data: tokenName } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi: blocxtactoeAbi,
+    functionName: "getTokenName",
+    args: !isETH && tokenAddress ? [tokenAddress] : undefined,
+    query: { 
+      enabled: !isETH && !!tokenAddress,
+    },
+  });
+
+  // Extract symbol for balance display
+  const tokenSymbol = isETH 
+    ? "ETH" 
+    : tokenName && typeof tokenName === "string" && tokenName.length > 0
+    ? tokenName.split(" ")[0] // Get first word (e.g., "USDC" from "USDC (Base)")
+    : "TOKEN";
+
+  if (isLoading) {
+    return (
+      <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-gray-400">
+        Balance: Loading...
+      </p>
+    );
+  }
+
+  return (
+    <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-gray-400">
+      Balance: <span className="text-green-400 font-medium">{parseFloat(balance).toFixed(4)} {tokenSymbol}</span>
+    </p>
+  );
 }
