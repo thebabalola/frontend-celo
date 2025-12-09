@@ -9,12 +9,12 @@ import { ForfeitModal } from "@/components/games/ForfeitModal";
 import { JoinGameModal } from "@/components/games/JoinGameModal";
 import { useBlOcXTacToe } from "@/hooks/useBlOcXTacToe";
 import { useGameData, usePlayerData } from "@/hooks/useGameData";
-import { formatEther } from "viem";
 import { Loader2, Coins, Users, AlertCircle, Clock, X, Trophy, Share2, RefreshCw } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Address } from "viem";
 import blocxtactoeAbiArtifact from "@/abi/blocxtactoeabi.json";
 import { CONTRACT_ADDRESS } from "@/config/constants";
+import { BetAmountDisplay, TokenNameDisplay } from "@/components/common/TokenDisplay";
 
 // Extract ABI array from Hardhat artifact
 const blocxtactoeAbi = (blocxtactoeAbiArtifact as { abi: unknown[] }).abi;
@@ -558,9 +558,12 @@ export function GameModal({ gameId, isOpen, onClose }: GameModalProps) {
                 </span>
               </div>
               <p className="text-white font-semibold text-sm sm:text-base md:text-lg">
-                {playerTwo && playerTwo !== "0x0000000000000000000000000000000000000000" 
-                  ? formatEther((betAmount || BigInt(0)) * BigInt(2)) + " ETH"
-                  : formatEther(betAmount || BigInt(0)) + " ETH"}
+                <BetAmountDisplay 
+                  betAmount={playerTwo && playerTwo !== "0x0000000000000000000000000000000000000000" 
+                    ? (betAmount || BigInt(0)) * BigInt(2)
+                    : betAmount || BigInt(0)} 
+                  tokenAddress={tokenAddress} 
+                />
               </p>
             </div>
             {/* Players */}
