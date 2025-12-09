@@ -6,7 +6,7 @@ import { Address } from "viem";
  */
 export const CONTRACT_ADDRESS: Address =
   (process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as Address) ||
-  ("0xA28FE229808a75503EB0831baa5c133fa37B623e" as Address);
+  ("0x2fD7aDE08AbD28DC0b33357Ff28A1ecB31a3790B" as Address);
 
 /**
  * Network Configuration
